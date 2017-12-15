@@ -4,10 +4,6 @@ from datetime import datetime
 import hashlib
 import csv
 
-"""
-Revisa archivo xml buscando coincidencias en los host  puertos que se pide
-"""
-
 hpre = []
 hapa = []
 h22 = []
@@ -97,19 +93,6 @@ def lee_xml(archivo_passwd):
 			idom = n.find(('address').get('addr')
 			hn = n.find('hostname').get('name')
 					ido.append(idom)
-#Mostrar Host
-
-print "Cantidad de Host Prendidos:" len(hpre)
-print "Cantidad de Host Apagados:" len(hapa)
-print "Cantidad de Host Con Puerto 22 Abierto:" len(h22)
-print "Cantidad de Host Con Puerto 53 Abierto:" len(h53)
-print "Cantidad de Host Con Puerto 80 Abierto:" len(h80)
-print "Cantidad de Host Con Puerto 443 Abierto:" len(h443)
-print "Cantidad de Host Con Nombre de Dominio:" len(hd)
-print "Cantidad de Host que utilizan Apache:" len(ha)
-print "Cantidad de Host que utilizan nginx:" len(hn)
-print "Cantidad de Host que utilizan Dionaea:" len(hdio)
-print "Cantidad de Host que utilizan otro servicio:" len(ho)
 
 #Creacion archivos csv
 
@@ -137,5 +120,27 @@ file = open("dominios.csv", "w". newline='')
 spamreader = csv.writer(file)
 spamreader = writerow(ido)
 file.close()
+
+def escribe_reporte():
+	contenido =""
+	contenido += "Cantidad de Host Prendidos:" len(hpre)
+	contenido += "Cantidad de Host Apagados:" len(hapa)
+	contenido += "Cantidad de Host Con Puerto 22 Abierto:" len(h22)
+	contenido += "Cantidad de Host Con Puerto 53 Abierto:" len(h53)
+	contenido += "Cantidad de Host Con Puerto 80 Abierto:" len(h80)
+	contenido += "Cantidad de Host Con Puerto 443 Abierto:" len(h443)
+	contenido += "Cantidad de Host Con Nombre de Dominio:" len(hd)
+	contenido += "Cantidad de Host que utilizan Apache:" len(ha)
+	contenido += "Cantidad de Host que utilizan nginx:" len(hn)
+	contenido += "Cantidad de Host que utilizan Dionaea:" len(hdio)
+	contenido += "Cantidad de Host que utilizan otro servicio:" len(ho)
+	return contenido
+
+def genera_reporte(contenido, archivo):
+	with open(archivo, 'w') as reporte:
+		reporte.write(contenido)
+
+
+
 
             
